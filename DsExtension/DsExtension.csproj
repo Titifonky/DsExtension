@@ -78,6 +78,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CmdBase.cs" />
+    <Compile Include="Cmds\CmdEffacerGravure.cs" />
     <Compile Include="Cmds\CmdLog.cs" />
     <Compile Include="Cmds\CmdNettoyerDvp.cs" />
     <Compile Include="dsAddin.cs" />

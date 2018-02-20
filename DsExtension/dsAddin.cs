@@ -55,6 +55,13 @@ namespace DsExtensionV2
                     CmdNettoyerDvp.registerCommand();
                     ListeCmds.Add(CmdNettoyerDvp);
                     Btn = Ligne.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdNettoyerDvp.ItemName(), CmdNettoyerDvp.UserCommandID());
+
+                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "BBB");
+                    var CmdEffacerGravure = new Cmds.CmdEffacerGravure(AppDs, AddinGUID);
+                    CmdEffacerGravure.registerCommand();
+                    ListeCmds.Add(CmdEffacerGravure);
+                    Btn = Ligne.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdEffacerGravure.ItemName(), CmdEffacerGravure.UserCommandID());
+
                     Panneau = ribbonTab.InsertRibbonPanel(AddinGUID, 2, "Dev", "Dev");
                     LigneBase = Panneau.InsertRibbonRow(AddinGUID, "X");
                     var Cmdlog = new Cmds.CmdLog(AppDs, AddinGUID);
