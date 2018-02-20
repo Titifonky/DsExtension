@@ -214,8 +214,10 @@ namespace Cmds
                     {
                         // Recherche du prochain point d'arc p3
                         var p3 = spline.PointOnSplineDistance(i);
-                        iPointOnSpline p2 = p3;
                         LstPoint.Add(p3);
+
+                        // Bricolage pour initialiser p2
+                        iPointOnSpline p2 = p3;                
 
                         var nbPt = LstPoint.Count;
                         Boolean Exit = false;
@@ -284,14 +286,6 @@ namespace Cmds
 
                     foreach (var arc in LstArc)
                     {
-                        //double[] arr = new double[6];
-                        //arr[0] = arc.P1.X;
-                        //arr[1] = arc.P1.Y;
-                        //arr[2] = arc.P2.X;
-                        //arr[3] = arc.P2.Y;
-                        //arr[4] = arc.P3.X;
-                        //arr[5] = arc.P3.Y;
-                        //SkMgr.InsertPolyline2D(arr, false);
                         var a = SkMgr.InsertArcBy3Points(arc.P1.MathPoint(), arc.P2.MathPoint(), arc.P3.MathPoint());
                         a.Layer = "CONVERT";
                     }
@@ -398,7 +392,7 @@ namespace Cmds
             double cd = (offset - Math.Pow(p3.X, 2) - Math.Pow(p3.Y, 2)) / 2.0;
             double det = (p1.X - p2.X) * (p2.Y - p3.Y) - (p2.X - p3.X) * (p1.Y - p2.Y);
 
-            if (Math.Abs(det) < 0.0000000001) { throw new Exception("Les points sont alignés"); }
+            //if (Math.Abs(det) < 0.0000000001) { throw new Exception("Les points sont alignés"); }
 
             double idet = 1 / det;
 
