@@ -15,7 +15,7 @@ namespace Cmds
         public CmdBase(DraftSight.Interop.dsAutomation.Application app, string groupName)
         {
             DsApp = app;
-            dsMathUtility = DsApp.GetMathUtility();
+            MathHelper.Init(app.GetMathUtility());
             m_group_name = groupName;
         }
 

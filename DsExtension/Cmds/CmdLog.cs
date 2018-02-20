@@ -9,10 +9,7 @@ namespace Cmds
     public class CmdLog : CmdBase
     {
         public CmdLog(DraftSight.Interop.dsAutomation.Application app, string groupName) : base(app, groupName)
-        {
-            MathHelper.Init(app.GetMathUtility());
-        }
-
+        { }
         public override string globalName() { return "_MAffLog"; }
         public override string localName() { return "AffLog"; }
 

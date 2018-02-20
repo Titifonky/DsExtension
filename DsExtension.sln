@@ -13,12 +13,12 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Debug|Any CPU.Build.0 = Debug|x64
 		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Debug|x64.ActiveCfg = Debug|x64
 		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Debug|x64.Build.0 = Debug|x64
-		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|Any CPU.ActiveCfg = Release|x64
+		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|Any CPU.Build.0 = Release|x64
 		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|x64.ActiveCfg = Release|x64
 		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
