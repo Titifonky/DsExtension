@@ -383,6 +383,10 @@ namespace Cmds
                         pos = Lg;
                     else
                     {
+                        // On multiplie le pas par la derivee au carré.
+                        // Cela permet d'augmenter ou de réduire le pas en fonction de la courbure de la spline
+                        // Le carré permet d'amplifier les modifications de courbure autour de 1
+                        // En dessous de 1, la courbe se resserre, au dessus elle s'applati.
                         var L = _p3.Derivee1.Longueur;
                         pos += Pas * L * L;
                     }
