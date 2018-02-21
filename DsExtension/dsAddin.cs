@@ -58,13 +58,13 @@ namespace DsExtension
                     ListeCmds.Add(CmdNettoyerDvp);
                     Btn = Ligne.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdNettoyerDvp.ItemName(), CmdNettoyerDvp.UserCommandID());
 
-                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "BBB");
+                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "AAB");
                     var CmdSimplifierSpline = new Cmds.CmdSimplifierSpline(AppDs, AddinGUID);
                     CmdSimplifierSpline.registerCommand();
                     ListeCmds.Add(CmdSimplifierSpline);
                     Btn = Ligne.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdSimplifierSpline.ItemName(), CmdSimplifierSpline.UserCommandID());
 
-                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "CCC");
+                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "AAC");
                     var CmdEffacerGravure = new Cmds.CmdEffacerGravure(AppDs, AddinGUID);
                     CmdEffacerGravure.registerCommand();
                     ListeCmds.Add(CmdEffacerGravure);
@@ -73,11 +73,20 @@ namespace DsExtension
                     // Deuxième colonne
 
                     Panneau = ribbonTab.InsertRibbonPanel(AddinGUID, 2, "Dev", "Dev");
-                    LigneBase = Panneau.InsertRibbonRow(AddinGUID, "X");
+                    LigneBase = Panneau.InsertRibbonRow(AddinGUID, "R");
+                    Colonne = LigneBase.InsertRibbonRowPanel(AddinGUID, "RR");
+
+                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "RRR");
                     var Cmdlog = new Cmds.CmdLog(AppDs, AddinGUID);
                     Cmdlog.registerCommand();
                     ListeCmds.Add(Cmdlog);
                     Btn = LigneBase.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, Cmdlog.ItemName(), Cmdlog.UserCommandID());
+
+                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "RRS");
+                    var CmdTest = new Cmds.CmdTest(AppDs, AddinGUID);
+                    CmdTest.registerCommand();
+                    ListeCmds.Add(CmdTest);
+                    Btn = LigneBase.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdTest.ItemName(), CmdTest.UserCommandID());
                 }
             }
             catch (Exception e)

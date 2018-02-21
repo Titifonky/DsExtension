@@ -61,10 +61,19 @@ namespace Cmds
                 do
                 {
                     result = CmdLine.PromptForBoolOrKeyword("Convertir toutes les splines", "Erreur", KeyWord, KeyWord, (int)dsPromptInit_e.dsPromptInit_NoDefault, "Oui", "Non", true, out Option, out toutesLesSplines);
-                    if (result == dsPromptResultType_e.dsPromptResultType_Keyword)
-                        ModifierOptions(Option);
 
-                } while (!((result == dsPromptResultType_e.dsPromptResultType_Value) || (result == dsPromptResultType_e.dsPromptResultType_Cancel)));
+                    switch (result)
+                    {
+                        case dsPromptResultType_e.dsPromptResultType_Keyword:
+                            ModifierOptions(Option);
+                            break;
+                        case dsPromptResultType_e.dsPromptResultType_Cancel:
+                            return;
+                        default:
+                            break;
+                    }
+
+                } while (result != dsPromptResultType_e.dsPromptResultType_Value);
 
                 if (result == dsPromptResultType_e.dsPromptResultType_Cancel)
                     return;
@@ -160,22 +169,6 @@ namespace Cmds
             catch (Exception e)
             { Log.Write(e); }
         }
-
-        private string[] GetTabNomsCalques(Document dsDoc)
-        {
-            LayerManager dsLayerManager = dsDoc.GetLayerManager();
-
-            object[] dsLayers = (object[])dsLayerManager.GetLayers();
-            string[] layerNames = new string[dsLayers.Length];
-
-            for (int index = 0; index < dsLayers.Length; ++index)
-            {
-                Layer dsLayer = dsLayers[index] as Layer;
-                layerNames[index] = dsLayer.Name;
-            }
-
-            return layerNames;
-        }
     }
 
     class SplineConverter
@@ -209,7 +202,7 @@ namespace Cmds
         public eCalculTolerance CalculTolerance { get; private set; }
         public Double Pas { get; private set; }
 
-        public SplineConverter(Spline spline, Double toleranceEcart, Double toleranceAngle, Double toleranceEcartMax, eCalculTolerance calcul = eCalculTolerance.Absolu, Double pas = 0.1)
+        public SplineConverter(Spline spline, Double toleranceEcart, Double toleranceAngle, Double toleranceEcartMax, eCalculTolerance calcul = eCalculTolerance.Absolu, Double pas = 0.2)
         {
             Spline = spline;
             ToleranceEcart = toleranceEcart; ToleranceAngle = toleranceAngle; ToleranceEcartMax = toleranceEcartMax;
@@ -380,20 +373,6 @@ namespace Cmds
 
                 if (_Exit)
                 {
-                    //Action<iPointOnSpline> TracerDerive1 = delegate (iPointOnSpline pt)
-                    //{
-                    //    MathHelper.Sm.InsertLine(pt.X, pt.Y, pt.Z, pt.X + pt.Derivee1.X * 10, pt.Y + pt.Derivee1.Y * 10, pt.Z + pt.Derivee1.Z * 10);
-                    //};
-
-                    //Action<iPointOnSpline> TracerDerive2 = delegate (iPointOnSpline pt)
-                    //{
-                    //    MathHelper.Sm.InsertLine(pt.X, pt.Y, pt.Z, pt.X + pt.Derivee2.X * 10, pt.Y + pt.Derivee2.Y * 10, pt.Z + pt.Derivee2.Z * 10);
-                    //};
-
-                    //TracerDerive1(_LastArc.P1);
-                    //TracerDerive1(_LastArc.P3);
-                    //TracerDerive2(_LastArc.P1);
-                    //TracerDerive2(_LastArc.P3);
                     return _LastArc;
                 }
                 else
@@ -403,7 +382,10 @@ namespace Cmds
                     else if ((Lg - pos) < Pas)
                         pos = Lg;
                     else
-                        pos += Pas;
+                    {
+                        var L = _p3.Derivee1.Longueur;
+                        pos += Pas * L * L;
+                    }
 
                     _p3 = Spline.PointOnSplineDistance(pos);
                     _LstPoint.Add(_p3);
@@ -649,6 +631,26 @@ namespace Cmds
                 X = x; Y = y; Z = z;
             }
 
+            public void Multiplier(double f)
+            {
+                X *= f; Y *= f; Z *= f;
+            }
+
+            public iPoint MultiplierC(double f)
+            {
+                return new iPoint(X *= f, Y *= f, Z *= f);
+            }
+
+            public void Deplacer(iVecteur v)
+            {
+                X += v.X; Y += v.Y; Z += v.Z;
+            }
+
+            public iPoint DeplacerC(iVecteur v)
+            {
+                return new iPoint(X += v.X, Y += v.Y, Z += v.Z);
+            }
+
             public double DistanceDe(iPoint pt)
             {
                 return Math.Sqrt(Math.Pow(pt.X - X, 2) + Math.Pow(pt.Y - Y, 2) + Math.Pow(pt.Z - Z, 2));
@@ -732,6 +734,16 @@ namespace Cmds
             public double ProdScalaire(iVecteur vec)
             {
                 return (X * vec.X) + (Y * vec.Y) + (Z * vec.Z);
+            }
+
+            public void Multiplier(double f)
+            {
+                X *= f; Y *= f; Z *= f;
+            }
+
+            public iVecteur MultiplierC(double f)
+            {
+                return new iVecteur(X *= f, Y *= f, Z *= f);
             }
 
             public double Longueur
