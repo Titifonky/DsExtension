@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace DsExtensionV2
+namespace DsExtension
 {
     [Guid("AB105651-116F-4CCD-AA7D-405A6EC771A3"), ComVisible(true)]
     public class dsAddin : DsAddin
@@ -50,6 +50,8 @@ namespace DsExtensionV2
                     Panneau = ribbonTab.InsertRibbonPanel(AddinGUID, 1, "Sw", "Sw");
                     LigneBase = Panneau.InsertRibbonRow(AddinGUID, "A");
                     Colonne = LigneBase.InsertRibbonRowPanel(AddinGUID, "AA");
+
+                    // Première colonne
                     Ligne = Colonne.InsertRibbonRow(AddinGUID, "AAA");
                     var CmdNettoyerDvp = new Cmds.CmdNettoyerDvp(AppDs, AddinGUID);
                     CmdNettoyerDvp.registerCommand();
@@ -57,10 +59,18 @@ namespace DsExtensionV2
                     Btn = Ligne.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdNettoyerDvp.ItemName(), CmdNettoyerDvp.UserCommandID());
 
                     Ligne = Colonne.InsertRibbonRow(AddinGUID, "BBB");
+                    var CmdSimplifierSpline = new Cmds.CmdSimplifierSpline(AppDs, AddinGUID);
+                    CmdSimplifierSpline.registerCommand();
+                    ListeCmds.Add(CmdSimplifierSpline);
+                    Btn = Ligne.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdSimplifierSpline.ItemName(), CmdSimplifierSpline.UserCommandID());
+
+                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "CCC");
                     var CmdEffacerGravure = new Cmds.CmdEffacerGravure(AppDs, AddinGUID);
                     CmdEffacerGravure.registerCommand();
                     ListeCmds.Add(CmdEffacerGravure);
                     Btn = Ligne.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdEffacerGravure.ItemName(), CmdEffacerGravure.UserCommandID());
+
+                    // Deuxième colonne
 
                     Panneau = ribbonTab.InsertRibbonPanel(AddinGUID, 2, "Dev", "Dev");
                     LigneBase = Panneau.InsertRibbonRow(AddinGUID, "X");
