@@ -365,7 +365,7 @@ namespace Cmds
 
             Func<bool> TestDeviationDistance = delegate ()
             {
-                for (int _p = 1; _p < _LstPoint.Count - 1; _p++)
+                for (int _p = _LstPoint.Count - 2; _p > 0; _p--)
                 {
                     if (_arc.DistanceDe2D(_LstPoint[_p]) > deviation)
                         return true;
