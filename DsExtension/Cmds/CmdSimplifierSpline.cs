@@ -134,7 +134,7 @@ namespace Cmds
                             toleranceEcart,
                             toleranceAngle,
                             toleranceEcartMax,
-                            methodeCalcul ? SplineConverter.eCalculTolerance.Pourcent : SplineConverter.eCalculTolerance.Absolu
+                            methodeCalcul ? SplineConverter.eCalculTolerance.Absolu : SplineConverter.eCalculTolerance.Pourcent
                             );
                         iLine? L = SplConverter.EnLigne();
                         if (L != null)
@@ -182,6 +182,9 @@ namespace Cmds
         public Spline Spline { get; set; }
 
         public Double Lg { get; private set; }
+        public Double LgParam { get; private set; }
+        public double StartParam { get; private set; }
+        public double EndParam { get; private set; }
         public iPointOnSpline StartPoint { get; private set; }
         public iPointOnSpline EndPoint { get; private set; }
         public List<iPoint> ListePointControl
@@ -201,19 +204,25 @@ namespace Cmds
         public Double ToleranceEcartMax { get; private set; }
         public eCalculTolerance CalculTolerance { get; private set; }
         public Double Pas { get; private set; }
+        public Double PasParam { get; private set; }
 
         public SplineConverter(Spline spline, Double toleranceEcart, Double toleranceAngle, Double toleranceEcartMax, eCalculTolerance calcul = eCalculTolerance.Absolu, Double pas = 0.2)
         {
             Spline = spline;
-            ToleranceEcart = toleranceEcart; ToleranceAngle = toleranceAngle; ToleranceEcartMax = toleranceEcartMax;
-            CalculTolerance = calcul; Pas = pas;
+            ToleranceEcart = toleranceEcart; ToleranceAngle = toleranceAngle; ToleranceEcartMax = toleranceEcartMax; Pas = pas;
+            CalculTolerance = calcul;
 
             Lg = spline.GetLength();
 
             Double sP, eP;
             Spline.GetEndParams(out sP, out eP);
+            StartParam = sP; EndParam = eP;
+            LgParam = eP - sP;
+            PasParam = (LgParam / Lg) * Pas;
+
             StartPoint = Spline.PointOnSplineParam(sP);
             EndPoint = Spline.PointOnSplineParam(eP);
+            
             CalculerDeviation();
         }
 
@@ -285,7 +294,7 @@ namespace Cmds
             try
             {
                 // Si la longueur de la spline est inferieure ou égale à 3 * le pas
-                if (Lg <= (Pas * 3))
+                if (LgParam <= (PasParam * 3))
                     LstArc.Add(
                         ArcFromPoints(
                         Spline.PointOnSplineDistance(0),
@@ -296,12 +305,12 @@ namespace Cmds
                 // Sinon on parcourt la spline
                 else
                 {
-                    var arc = ChercherArc(0.0);
+                    var arc = ChercherArc(StartParam);
                     while (arc != null)
                     {
                         var a = (iArc)arc;
                         LstArc.Add(a);
-                        arc = ChercherArc(a.P3.Distance);
+                        arc = ChercherArc(a.P3.Param);
                     }
                 }
             }
@@ -311,30 +320,31 @@ namespace Cmds
             return LstArc;
         }
 
-        private iArc? ChercherArc(double pos)
+        private iArc? ChercherArc(double posParam)
         {
             iPointOnSpline _p1, _p2, _p3;
             List<iPointOnSpline> _LstPoint = new List<iPointOnSpline>();
             // Reste à parcourir
-            var _diff = Lg - pos;
+            var _diff = EndParam - posParam;
 
             // Si la différence == 0 on ne renvoi rien
             if (_diff == 0.0) return null;
 
             // Si la différence est inferieur à 2*Pas on retourne l'arc
-            if (_diff <= (Pas * 2.0))
+            if (_diff <= (PasParam * 2.0))
             {
                 return ArcFromPoints(
-                    Spline.PointOnSplineDistance(pos),
-                    Spline.PointOnSplineDistance(pos + _diff * 0.5),
-                    Spline.PointOnSplineDistance(pos + _diff));
+                    Spline.PointOnSplineParam(posParam),
+                    Spline.PointOnSplineParam(posParam + _diff * 0.5),
+                    Spline.PointOnSplineParam(posParam + _diff));
             }
             else
             {
-                _p1 = Spline.PointOnSplineDistance(pos);
-                _p2 = Spline.PointOnSplineDistance(pos + Pas);
-                _p3 = Spline.PointOnSplineDistance(pos + (2 * Pas));
-                pos += 2 * Pas;
+                _p1 = Spline.PointOnSplineParam(posParam);
+                _p2 = Spline.PointOnSplineParam(posParam + PasParam);
+
+                posParam += 2 * PasParam;
+                _p3 = Spline.PointOnSplineParam(posParam);
             }
 
             iArc _arc = ArcFromPoints(_p1, _p2, _p3);
@@ -357,7 +367,7 @@ namespace Cmds
             {
                 for (int _p = 1; _p < _LstPoint.Count - 1; _p++)
                 {
-                    if (_arc.DistanceDe(_LstPoint[_p].Point) > deviation)
+                    if (_arc.DistanceDe2D(_LstPoint[_p]) > deviation)
                         return true;
                 }
 
@@ -377,33 +387,33 @@ namespace Cmds
                 }
                 else
                 {
-                    if (pos == Lg)
+                    if (posParam == EndParam)
                         break;
-                    else if ((Lg - pos) < Pas)
-                        pos = Lg;
+                    else if ((EndParam - posParam) < PasParam)
+                        posParam = EndParam;
                     else
                     {
                         // On multiplie le pas par la derivee au carré.
                         // Cela permet d'augmenter ou de réduire le pas en fonction de la courbure de la spline
                         // Le carré permet d'amplifier les modifications de courbure autour de 1
                         // En dessous de 1, la courbe se resserre, au dessus elle s'applati.
-                        var L = _p3.Derivee1.Longueur;
-                        pos += Pas * L * L;
+                        //var L = Math.Min(1.0, _p3.Derivee1.Longueur);
+                        // Methode de la dérivée trop longue
+                        posParam += PasParam;
                     }
 
-                    _p3 = Spline.PointOnSplineDistance(pos);
-                    _LstPoint.Add(_p3);
+                    _LstPoint.Add(_p3 = Spline.PointOnSplineParam(posParam));
                     _p2 = _LstPoint[_LstPoint.Count / 2];
 
                     if (_LstPoint.Count % 2 == 0)
-                        _p2 = Spline.PointOnSplineDistance((_p3.Distance + _p1.Distance) * 0.5);
+                        _p2 = Spline.PointOnSplineParam((_p3.Param + _p1.Param) * 0.5);
 
                     _LastArc = _arc;
                     _arc = ArcFromPoints(_p1, _p2, _p3);
                 }
 
 
-            } while (pos <= Lg);
+            } while (posParam <= EndParam);
 
             return _arc;
         }
@@ -457,7 +467,7 @@ namespace Cmds
             spl.EvaluateAtParameter(param, out X, out Y, out Z, out D, out fD, out sD);
             var ev = new Eval();
             ev.Distance = D;
-            ev.PointOnSpline = new iPointOnSpline(X, Y, D, new iVecteur((Double[])fD), new iVecteur((Double[])sD));
+            ev.PointOnSpline = new iPointOnSpline(X, Y, D, param, new iVecteur((Double[])fD), new iVecteur((Double[])sD));
             ev.Point = new iPoint(X, Y, Z);
             ev.Param = param;
             ev.Derivee1 = new iVecteur((Double[])fD);
@@ -467,13 +477,13 @@ namespace Cmds
 
         public static Eval EvalDistance(this Spline spl, Double dist)
         {
-            double X, Y, Z, P; object fD, sD;
-            spl.EvaluateAtDistance(dist, out X, out Y, out Z, out P, out fD, out sD);
+            double X, Y, Z, Param; object fD, sD;
+            spl.EvaluateAtDistance(dist, out X, out Y, out Z, out Param, out fD, out sD);
             var ev = new Eval();
             ev.Distance = dist;
-            ev.PointOnSpline = new iPointOnSpline(X, Y, dist, new iVecteur((Double[])fD), new iVecteur((Double[])sD));
+            ev.PointOnSpline = new iPointOnSpline(X, Y, dist, Param, new iVecteur((Double[])fD), new iVecteur((Double[])sD));
             ev.Point = new iPoint(X, Y, Z);
-            ev.Param = P;
+            ev.Param = Param;
             ev.Derivee1 = new iVecteur((Double[])fD);
             ev.Derivee2 = new iVecteur((Double[])sD);
             return ev;
@@ -483,14 +493,14 @@ namespace Cmds
         {
             double X, Y, Z, D; object fD, sD;
             spl.EvaluateAtParameter(param, out X, out Y, out Z, out D, out fD, out sD);
-            return new iPointOnSpline(X, Y, D, new iVecteur((Double[])fD), new iVecteur((Double[])sD));
+            return new iPointOnSpline(X, Y, D, param, new iVecteur((Double[])fD), new iVecteur((Double[])sD));
         }
 
         public static iPointOnSpline PointOnSplineDistance(this Spline spl, Double dist)
         {
-            double X, Y, Z, P; object fD, sD;
-            spl.EvaluateAtDistance(dist, out X, out Y, out Z, out P, out fD, out sD);
-            return new iPointOnSpline(X, Y, dist, new iVecteur((Double[])fD), new iVecteur((Double[])sD));
+            double X, Y, Z, Param; object fD, sD;
+            spl.EvaluateAtDistance(dist, out X, out Y, out Z, out Param, out fD, out sD);
+            return new iPointOnSpline(X, Y, dist, Param, new iVecteur((Double[])fD), new iVecteur((Double[])sD));
         }
 
         public struct Eval
@@ -596,9 +606,14 @@ namespace Cmds
                 Centre = centre; Rayon = rayon; P1 = p1; P2 = p2; P3 = p3;
             }
 
-            public double DistanceDe(iPoint pt)
+            public double DistanceDe2D(iPointOnSpline pt)
             {
-                return Math.Abs(pt.DistanceDe(Centre) - Rayon);
+                return Math.Abs(pt.DistanceDe2D(Centre) - Rayon);
+            }
+
+            public double DistanceDe2D(iPoint pt)
+            {
+                return Math.Abs(pt.DistanceDe2D(Centre) - Rayon);
             }
 
             public double DeviationP1()
@@ -655,9 +670,14 @@ namespace Cmds
                 return new iPoint(X += v.X, Y += v.Y, Z += v.Z);
             }
 
-            public double DistanceDe(iPoint pt)
+            public double DistanceDe3D(iPoint pt)
             {
                 return Math.Sqrt(Math.Pow(pt.X - X, 2) + Math.Pow(pt.Y - Y, 2) + Math.Pow(pt.Z - Z, 2));
+            }
+
+            public double DistanceDe2D(iPoint pt)
+            {
+                return Math.Sqrt(Math.Pow(pt.X - X, 2) + Math.Pow(pt.Y - Y, 2));
             }
 
             public override String ToString()
@@ -672,17 +692,18 @@ namespace Cmds
             public Double Y;
             public Double Z;
             public double Distance;
+            public double Param;
             public iVecteur Derivee1;
             public iVecteur Derivee2;
 
-            public iPointOnSpline(double x, double y, double dist, iVecteur derivee1, iVecteur derivee2)
+            public iPointOnSpline(double x, double y, double dist, double param, iVecteur derivee1, iVecteur derivee2)
             {
-                X = x; Y = y; Z = 0; Distance = dist; Derivee1 = derivee1; Derivee2 = derivee2;
+                X = x; Y = y; Z = 0; Distance = dist; Param = param ; Derivee1 = derivee1; Derivee2 = derivee2;
             }
 
-            public iPointOnSpline(double x, double y, double z, double dist, iVecteur derivee1, iVecteur derivee2)
+            public iPointOnSpline(double x, double y, double z, double dist, double param, iVecteur derivee1, iVecteur derivee2)
             {
-                X = x; Y = y; Z = z; Distance = dist; Derivee1 = derivee1; Derivee2 = derivee2;
+                X = x; Y = y; Z = z; Distance = dist; Param = param; Derivee1 = derivee1; Derivee2 = derivee2;
             }
 
             public iPoint Point
@@ -693,7 +714,22 @@ namespace Cmds
                 }
             }
 
-            public double DistanceDe(iPoint pt)
+            public double DistanceDe2D(iPointOnSpline pt)
+            {
+                return Math.Sqrt(Math.Pow(pt.X - X, 2) + Math.Pow(pt.Y - Y, 2));
+            }
+
+            public double DistanceDe3D(iPointOnSpline pt)
+            {
+                return Math.Sqrt(Math.Pow(pt.X - X, 2) + Math.Pow(pt.Y - Y, 2) + Math.Pow(pt.Z - Z, 2));
+            }
+
+            public double DistanceDe2D(iPoint pt)
+            {
+                return Math.Sqrt(Math.Pow(pt.X - X, 2) + Math.Pow(pt.Y - Y, 2));
+            }
+
+            public double DistanceDe3D(iPoint pt)
             {
                 return Math.Sqrt(Math.Pow(pt.X - X, 2) + Math.Pow(pt.Y - Y, 2) + Math.Pow(pt.Z - Z, 2));
             }
