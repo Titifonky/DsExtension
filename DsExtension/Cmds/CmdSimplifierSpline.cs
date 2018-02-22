@@ -3,6 +3,8 @@ using LogDebugging;
 using System;
 using System.Collections.Generic;
 using static Cmds.GeometrieHelper;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Cmds
 {
@@ -39,11 +41,11 @@ namespace Cmds
                     CmdLine.PromptForString(true, "", "", out sss);
                 }
 
-                string[] KeyWord = new string[] { "Oui", "Non", "Distance", "Max", "Angle", "Calcul", "SupprimerOriginal"};
+                string[] KeyWord = new string[] { "Oui", "Non", "Distance", "Max", "Angle", "Calcul", "SupprimerOriginal" };
 
                 Action<string> ModifierOptions = delegate (string s)
                 {
-                    if(s == "Distance")
+                    if (s == "Distance")
                         CmdLine.PromptForDouble("Deviation de distance par rapport à la spline ", toleranceEcart, out toleranceEcart);
                     else if (s == "Max")
                         CmdLine.PromptForDouble("Deviation de distance maximum absolue ", toleranceEcartMax, out toleranceEcartMax);
@@ -105,7 +107,7 @@ namespace Cmds
                     SlFilter.AddEntityType(dsObjectType_e.dsSplineType);
                     SlFilter.Active = true;
 
-                    if(CmdLine.PromptForSelection(false, "Selectionnez la spline", "Ce n'est pas une spline"))
+                    if (CmdLine.PromptForSelection(false, "Selectionnez la spline", "Ce n'est pas une spline"))
                     {
                         dsObjectType_e entityType;
                         var count = SlMgr.GetSelectedObjectCount(dsSelectionSetType_e.dsSelectionSetType_Previous);
@@ -222,7 +224,7 @@ namespace Cmds
 
             StartPoint = Spline.PointOnSplineParam(sP);
             EndPoint = Spline.PointOnSplineParam(eP);
-            
+
             CalculerDeviation();
         }
 
@@ -320,6 +322,8 @@ namespace Cmds
             return LstArc;
         }
 
+
+
         private iArc? ChercherArc(double posParam)
         {
             iPointOnSpline _p1, _p2, _p3;
@@ -357,62 +361,77 @@ namespace Cmds
                 if (ToleranceAngle != 0)
                 {
                     if ((_arc.DeviationP1() > ToleranceAngle) || (_arc.DeviationP3() > ToleranceAngle))
-                        return true;
+                        return false;
                 }
 
-                return false;
+                return true;
             };
 
+            // Iteration
             Func<bool> TestDeviationDistance = delegate ()
             {
                 for (int _p = _LstPoint.Count - 2; _p > 0; _p--)
                 {
                     if (_arc.DistanceDe2D(_LstPoint[_p]) > deviation)
-                        return true;
+                        return false;
                 }
 
-                return false;
+                return true;
+            };
+
+            // Parallel
+            Func<bool> TestDeviationDistance2 = delegate ()
+            {
+                var test = true;
+                var op = new ParallelOptions();
+                op.MaxDegreeOfParallelism = 4;
+                Parallel.For(
+                    1,
+                    _LstPoint.Count - 1,
+                    op,
+                    (_p, Etat) =>
+                    {
+                        if (_arc.DistanceDe2D(_LstPoint[_p]) > deviation)
+                        {
+                            test = false;
+                            Etat.Stop();
+                            return;
+                        }
+                    }
+                    );
+
+                return test;
             };
 
             do
             {
-                Boolean _Exit = false;
-
-                if (!(_Exit = TestDeviationAngle()))
-                    _Exit = TestDeviationDistance();
-
-                if (_Exit)
-                {
+                if (!(TestDeviationAngle() && TestDeviationDistance()))
                     return _LastArc;
-                }
+
+                if (posParam == EndParam)
+                    break;
+                else if ((EndParam - posParam) < PasParam)
+                    posParam = EndParam;
                 else
                 {
-                    if (posParam == EndParam)
-                        break;
-                    else if ((EndParam - posParam) < PasParam)
-                        posParam = EndParam;
-                    else
-                    {
-                        // On multiplie le pas par la derivee au carré.
-                        // Cela permet d'augmenter ou de réduire le pas en fonction de la courbure de la spline
-                        // Le carré permet d'amplifier les modifications de courbure autour de 1
-                        // En dessous de 1, la courbe se resserre, au dessus elle s'applati.
-                        //var L = Math.Min(1.0, _p3.Derivee1.Longueur);
-                        // Methode de la dérivée trop longue
-                        posParam += PasParam;
-                    }
-
-                    _LstPoint.Add(_p3 = Spline.PointOnSplineParam(posParam));
-                    _p2 = _LstPoint[_LstPoint.Count / 2];
-
-                    if (_LstPoint.Count % 2 == 0)
-                        _p2 = Spline.PointOnSplineParam((_p3.Param + _p1.Param) * 0.5);
-
-                    _LastArc = _arc;
-                    _arc = ArcFromPoints(_p1, _p2, _p3);
+                    // On multiplie le pas par la derivee au carré.
+                    // Cela permet d'augmenter ou de réduire le pas en fonction de la courbure de la spline
+                    // Le carré permet d'amplifier les modifications de courbure autour de 1
+                    // En dessous de 1, la courbe se resserre, au dessus elle s'applati.
+                    //var L = Math.Min(1.0, _p3.Derivee1.Longueur);
+                    // Methode de la dérivée trop longue
+                    posParam += PasParam;
                 }
 
+                _p3 = Spline.PointOnSplineParam(posParam);
+                _p2 = _LstPoint[_LstPoint.Count / 2];
 
+                if (_LstPoint.Count % 2 == 0)
+                    _p2 = Spline.PointOnSplineParam((_p3.Param + _p1.Param) * 0.5);
+
+                _LstPoint.Add(_p3);
+                _LastArc = _arc;
+                _arc = ArcFromPoints(_p1, _p2, _p3);
             } while (posParam <= EndParam);
 
             return _arc;
@@ -698,7 +717,7 @@ namespace Cmds
 
             public iPointOnSpline(double x, double y, double dist, double param, iVecteur derivee1, iVecteur derivee2)
             {
-                X = x; Y = y; Z = 0; Distance = dist; Param = param ; Derivee1 = derivee1; Derivee2 = derivee2;
+                X = x; Y = y; Z = 0; Distance = dist; Param = param; Derivee1 = derivee1; Derivee2 = derivee2;
             }
 
             public iPointOnSpline(double x, double y, double z, double dist, double param, iVecteur derivee1, iVecteur derivee2)
