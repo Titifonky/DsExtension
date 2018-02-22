@@ -60,7 +60,7 @@ namespace Cmds
                 CmdLine.PromptExplanation = "Oui";
                 do
                 {
-                    result = CmdLine.PromptForBoolOrKeyword("Convertir toutes les splines", "Erreur", KeyWord, KeyWord, (int)dsPromptInit_e.dsPromptInit_NoDefault, "Oui", "Non", true, out Option, out toutesLesSplines);
+                    result = CmdLine.PromptForBoolOrKeyword("Convertir toutes les splines", "Erreur", KeyWord, KeyWord, (int)dsPromptInit_e.dsPromptInit_UsePromptExplanation, "Oui", "Non", true, out Option, out toutesLesSplines);
 
                     switch (result)
                     {

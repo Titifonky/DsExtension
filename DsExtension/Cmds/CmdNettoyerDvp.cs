@@ -130,6 +130,8 @@ namespace Cmds
                     }
                 }
 
+                DsApp.RunCommand("_CSICON\nP\n", true);
+
                 //==============================================================================
                 CmdLine.PrintLine("Purger le dessin");
                 DsApp.RunCommand("_-CLEAN\n_All\n*\n_No\n", true);
