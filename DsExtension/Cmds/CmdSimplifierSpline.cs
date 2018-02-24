@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using static Cmds.GeometrieHelper;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace Cmds
 {
@@ -368,7 +369,19 @@ namespace Cmds
             };
 
             // Iteration
-            Func<bool> TestDeviationDistance = delegate ()
+            Func<bool> TestDeviationDistanceOrig = delegate ()
+            {
+                for (int _p = _LstPoint.Count - 2; _p > 0; _p--)
+                {
+                    if (_arc.DistanceDe2D(_LstPoint[_p]) > deviation)
+                        return false;
+                }
+
+                return true;
+            };
+
+            // Iteration
+            Func<bool> TestIteration = delegate ()
             {
                 for (int _p = _LstPoint.Count - 2; _p > 0; _p--)
                 {
@@ -380,33 +393,59 @@ namespace Cmds
             };
 
             // Parallel
-            Func<bool> TestDeviationDistance2 = delegate ()
+            Func<bool> TestDeviationDistance = delegate ()
             {
-                var test = true;
-                var op = new ParallelOptions();
-                op.MaxDegreeOfParallelism = 4;
-                Parallel.For(
-                    1,
-                    _LstPoint.Count - 1,
-                    op,
-                    (_p, Etat) =>
+                int range = 1200;
+                int n = (_LstPoint.Count / range) + 1;
+                Tuple<int, int>[] tabIteration = new Tuple<int, int>[n];
+
+                for (int i = 0; i < n; i++)
+                    tabIteration[i] = new Tuple<int, int>(i * range, Math.Min((i * range) + range, _LstPoint.Count));
+
+                bool result = true;
+
+                if (n == 1)
+                {
+                    for (int i = 0; i < _LstPoint.Count; i++)
                     {
-                        if (_arc.DistanceDe2D(_LstPoint[_p]) > deviation)
+                        if (_arc.DistanceDe2D(_LstPoint[i]) > deviation)
                         {
-                            test = false;
-                            Etat.Stop();
-                            return;
+                            result = false;
+                            break;
                         }
                     }
-                    );
+                }
+                else
+                {
+                    Parallel.For(
+                        0,
+                        n,
+                        (_p, Etat) =>
+                        {
+                            var r = tabIteration[_p];
+                            for (int i = r.Item1; i < r.Item2; i++)
+                            {
+                                if (_arc.DistanceDe2D(_LstPoint[i]) > deviation)
+                                {
+                                    Etat.Stop();
+                                    result = false;
+                                    return;
+                                }
+                            }
+                        }
+                        );
+                }
 
-                return test;
+                return result;
             };
 
             do
             {
                 if (!(TestDeviationAngle() && TestDeviationDistance()))
-                    return _LastArc;
+                {
+                    _arc = _LastArc;
+                    break;
+                }
 
                 if (posParam == EndParam)
                     break;
@@ -434,6 +473,7 @@ namespace Cmds
                 _arc = ArcFromPoints(_p1, _p2, _p3);
             } while (posParam <= EndParam);
 
+            Log.Message(_LstPoint.Count);
             return _arc;
         }
     }
