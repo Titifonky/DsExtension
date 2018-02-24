@@ -380,27 +380,12 @@ namespace Cmds
                 return true;
             };
 
-            // Iteration
-            Func<bool> TestIteration = delegate ()
-            {
-                for (int _p = _LstPoint.Count - 2; _p > 0; _p--)
-                {
-                    if (_arc.DistanceDe2D(_LstPoint[_p]) > deviation)
-                        return false;
-                }
-
-                return true;
-            };
+            int ParallelRange = 1200;
 
             // Parallel
             Func<bool> TestDeviationDistance = delegate ()
             {
-                int range = 1200;
-                int n = (_LstPoint.Count / range) + 1;
-                Tuple<int, int>[] tabIteration = new Tuple<int, int>[n];
-
-                for (int i = 0; i < n; i++)
-                    tabIteration[i] = new Tuple<int, int>(i * range, Math.Min((i * range) + range, _LstPoint.Count));
+                int n = (_LstPoint.Count / ParallelRange) + 1;
 
                 bool result = true;
 
@@ -417,6 +402,11 @@ namespace Cmds
                 }
                 else
                 {
+                    Tuple<int, int>[] tabIteration = new Tuple<int, int>[n];
+
+                    for (int i = 0; i < n; i++)
+                        tabIteration[i] = new Tuple<int, int>(i * ParallelRange, Math.Min((i * ParallelRange) + ParallelRange, _LstPoint.Count));
+
                     Parallel.For(
                         0,
                         n,
