@@ -90,6 +90,9 @@ namespace Cmds
 
                 object[] TabEntites = null;
 
+                CmdLine.PrintLine($"Angle : {toleranceAngle}° Dist : {toleranceEcart}mm Max : {toleranceEcartMax}mm");
+                CmdLine.PrintLine($" Toutes les splines : {(toutesLesSplines ? "Oui" : "Non")} Supprimer l'original : {(supprimerOriginal?"Oui":"Non")} Calcul % : {(methodeCalcul ? "Oui" : "Non")}");
+
                 if (toutesLesSplines)
                 {
                     SlFilter.Clear();
@@ -98,7 +101,7 @@ namespace Cmds
 
                     object ObjType = null;
                     object ObjEntites = null;
-                    string[] TabNomsCalques = new string[] { "0" };
+                    string[] TabNomsCalques = GetTabNomsCalques(DsDoc);
                     SkMgr.GetEntities(SlFilter, TabNomsCalques, out ObjType, out ObjEntites);
                     TabEntites = ObjEntites as object[];
                 }
@@ -128,32 +131,48 @@ namespace Cmds
 
                 var DateTimeStart = DateTime.Now;
 
-                if (TabEntites != null && TabEntites.Length > 0)
+                CmdLine.PrintLine($"{TabEntites.Length} spline(s) selectionnées");
+
+                long NbArc = 0;
+
+                Action<object> Convertir = delegate (object o)
                 {
-                    foreach (Spline Spline in TabEntites)
-                    {
-                        SplineConverter SplConverter = new SplineConverter(
+                    Spline Spline = o as Spline;
+                    if (Spline == null) return;
+
+                    SplineConverter SplConverter = new SplineConverter(
                             Spline,
                             toleranceEcart,
                             toleranceAngle,
                             toleranceEcartMax,
                             methodeCalcul ? SplineConverter.eCalculTolerance.Absolu : SplineConverter.eCalculTolerance.Pourcent
                             );
-                        iLine? L = SplConverter.EnLigne();
-                        if (L != null)
-                        {
-                            var l = (iLine)L;
-                            SkMgr.InsertLine(l.P1.X, l.P1.Y, l.P1.Z, l.P2.X, l.P2.Y, l.P2.Z);
-                        }
-                        else
-                        {
-                            var List = SplConverter.EnPolyligne();
-                            foreach (var arc in List)
-                                SkMgr.InsertArcBy3Points(arc.P1.MathPoint(), arc.P2.MathPoint(), arc.P3.MathPoint());
-                        }
+                    iLine? L = SplConverter.EnLigne();
+                    if (L != null)
+                    {
+                        var l = (iLine)L;
+                        SkMgr.InsertLine(l.P1.X, l.P1.Y, l.P1.Z, l.P2.X, l.P2.Y, l.P2.Z);
                     }
+                    else
+                    {
+                        var List = SplConverter.EnPolyligne();
+                        foreach (var arc in List)
+                            SkMgr.InsertArcBy3Points(arc.P1.MathPoint(), arc.P2.MathPoint(), arc.P3.MathPoint());
 
-                    CmdLine.PrintLine(TabEntites.Length + " spline(s) convertis");
+                        NbArc += List.Count;
+                    }
+                };
+
+                if (TabEntites != null && TabEntites.Length > 0)
+                {
+                    Parallel.ForEach(TabEntites, Convertir);
+
+                    if (TabEntites.Length == 1)
+                        Convertir(TabEntites[0]);
+                    else
+                        Parallel.ForEach(TabEntites, Convertir);
+
+                    CmdLine.PrintLine($"{TabEntites.Length} spline(s) converties en {NbArc} arc(s)");
 
                     if (supprimerOriginal)
                     {
@@ -171,6 +190,22 @@ namespace Cmds
             }
             catch (Exception e)
             { Log.Write(e); }
+        }
+
+        private string[] GetTabNomsCalques(Document dsDoc)
+        {
+            LayerManager dsLayerManager = dsDoc.GetLayerManager();
+
+            object[] dsLayers = (object[])dsLayerManager.GetLayers();
+            string[] layerNames = new string[dsLayers.Length];
+
+            for (int index = 0; index < dsLayers.Length; ++index)
+            {
+                Layer dsLayer = dsLayers[index] as Layer;
+                layerNames[index] = dsLayer.Name;
+            }
+
+            return layerNames;
         }
     }
 
