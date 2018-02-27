@@ -131,8 +131,6 @@ namespace Cmds
 
                 var DateTimeStart = DateTime.Now;
 
-                CmdLine.PrintLine($"{TabEntites.Length} spline(s) selectionnées");
-
                 long NbArc = 0;
 
                 Action<object> Convertir = delegate (object o)
@@ -165,6 +163,8 @@ namespace Cmds
 
                 if (TabEntites != null && TabEntites.Length > 0)
                 {
+                    CmdLine.PrintLine($"{TabEntites.Length} spline(s) selectionnées");
+
                     Parallel.ForEach(TabEntites, Convertir);
 
                     if (TabEntites.Length == 1)
