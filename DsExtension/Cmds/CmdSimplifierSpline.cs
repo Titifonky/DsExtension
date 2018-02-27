@@ -498,7 +498,7 @@ namespace Cmds
                 _arc = ArcFromPoints(_p1, _p2, _p3);
             } while (posParam <= EndParam);
 
-            Log.Message(_LstPoint.Count);
+            //Log.Message(_LstPoint.Count);
             return _arc;
         }
     }
