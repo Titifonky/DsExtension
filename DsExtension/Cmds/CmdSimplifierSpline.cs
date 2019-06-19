@@ -165,7 +165,7 @@ namespace Cmds
                 {
                     CmdLine.PrintLine($"{TabEntites.Length} spline(s) selectionnées");
 
-                    Parallel.ForEach(TabEntites, Convertir);
+                    //Parallel.ForEach(TabEntites, Convertir);
 
                     if (TabEntites.Length == 1)
                         Convertir(TabEntites[0]);

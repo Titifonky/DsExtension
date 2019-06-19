@@ -7,14 +7,29 @@ using System.Runtime.InteropServices;
 
 namespace DsExtension
 {
+    /*
+     * Pour installer l'extension, il faut créer un fichier xml à l'endroit suivant :
+            C:\ProgramData\Dassault Systemes\DraftSight\addinConfigs
+     * Le fichier doit être appeler :
+            DsExtension.xml
+     * Il doit contenir le texte suivant :
+           <addinmanager>
+	           <draftsight version="">
+	               <addin help="DsExtension" startup="1" name="DsExtension">
+	                   <com clsid="AB105651-116F-4CCD-AA7D-405A6EC771A3"/>
+	                   <button bitmap=""/>
+	               </addin>
+	           </draftsight>
+           </addinmanager>
+     */
     [Guid("AB105651-116F-4CCD-AA7D-405A6EC771A3"), ComVisible(true)]
-    public class dsAddin : DsAddin
+    public class DsExtensionAddin : DsAddin
     {
         private DraftSight.Interop.dsAutomation.Application AppDs = null;
         private string AddinGUID = "";
         private List<Cmds.CmdBase> ListeCmds = new List<Cmds.CmdBase>();
 
-        public dsAddin()
+        public DsExtensionAddin()
         {
             AddinGUID = this.GetType().GUID.ToString();
         }
