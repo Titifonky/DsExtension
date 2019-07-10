@@ -14,6 +14,8 @@ namespace Cmds
         public CmdSimplifierSpline(DraftSight.Interop.dsAutomation.Application app, string groupName) : base(app, groupName)
         { }
 
+        public SketchManager Sm = null;
+
         public override string globalName() { return "_MSimplifierSpline"; }
         public override string localName() { return "MSimplifierSpline"; }
 
@@ -24,7 +26,7 @@ namespace Cmds
         {
             try
             {
-                MathHelper.Sm = DsApp.GetActiveDocument().GetModel().GetSketchManager();
+                Sm = DsApp.GetActiveDocument().GetModel().GetSketchManager();
 
                 DsApp.AbortRunningCommand();
 
@@ -504,8 +506,6 @@ namespace Cmds
     static class MathHelper
     {
         public static MathUtility Mu = null;
-
-        public static SketchManager Sm = null;
 
         public static void Init(MathUtility mu)
         {

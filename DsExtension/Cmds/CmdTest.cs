@@ -11,6 +11,8 @@ namespace Cmds
         public CmdTest(DraftSight.Interop.dsAutomation.Application app, string groupName) : base(app, groupName)
         { }
 
+        public SketchManager Sm = null;
+
         public override string globalName() { return "_MTest"; }
         public override string localName() { return "MTest"; }
 
@@ -21,7 +23,7 @@ namespace Cmds
         {
             try
             {
-                MathHelper.Sm = DsApp.GetActiveDocument().GetModel().GetSketchManager();
+                Sm = DsApp.GetActiveDocument().GetModel().GetSketchManager();
 
                 DsApp.AbortRunningCommand();
 

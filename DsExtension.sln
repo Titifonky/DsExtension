@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DsExtension", "DsExtension\DsExtension.csproj", "{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VoronoiLib", "..\VoronoiLib\VoronoiLib\VoronoiLib.csproj", "{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +23,19 @@ Global
 		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|Any CPU.Build.0 = Release|x64
 		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|x64.ActiveCfg = Release|x64
 		{F466A159-F8AB-4AAA-B571-88AD1EA27DE9}.Release|x64.Build.0 = Release|x64
+		{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}.Debug|x64.Build.0 = Debug|Any CPU
+		{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}.Release|x64.ActiveCfg = Release|Any CPU
+		{CE448DFB-0E3A-4CCE-8FA4-FD836ABAF709}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3D831C80-0E88-4384-A8F3-93807D8F235D}
 	EndGlobalSection
 EndGlobal

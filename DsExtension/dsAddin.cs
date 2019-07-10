@@ -87,7 +87,19 @@ namespace DsExtension
 
                     // Deuxième colonne
 
-                    Panneau = ribbonTab.InsertRibbonPanel(AddinGUID, 2, "Dev", "Dev");
+                    Panneau = ribbonTab.InsertRibbonPanel(AddinGUID, 2, "Outils", "Outils");
+                    LigneBase = Panneau.InsertRibbonRow(AddinGUID, "B");
+                    Colonne = LigneBase.InsertRibbonRowPanel(AddinGUID, "BB");
+
+                    Ligne = Colonne.InsertRibbonRow(AddinGUID, "BAA");
+                    var CmdPoinconner = new Cmds.Poinconner.CmdPoinconner(AppDs, AddinGUID);
+                    CmdPoinconner.registerCommand();
+                    ListeCmds.Add(CmdPoinconner);
+                    Btn = LigneBase.InsertRibbonCommandButton(AddinGUID, dsRibbonButtonStyle_e.dsRibbonButtonStyle_SmallWithText, CmdPoinconner.ItemName(), CmdPoinconner.UserCommandID());
+
+                    // Troisième colonne
+
+                    Panneau = ribbonTab.InsertRibbonPanel(AddinGUID, 3, "Dev", "Dev");
                     LigneBase = Panneau.InsertRibbonRow(AddinGUID, "R");
                     Colonne = LigneBase.InsertRibbonRowPanel(AddinGUID, "RR");
 
