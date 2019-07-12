@@ -35,7 +35,9 @@ namespace Cmds.Poinconner
             return r;
         }
 
-        public static int Floor(float n) { return (int)Math.Floor(n); }
+        public static int FloorToInt(float n) { return (int)Math.Floor(n); }
+
+        public static int FloorToInt(double n) { return (int)Math.Floor(n); }
     }
 
     public static class BitmapHelper
