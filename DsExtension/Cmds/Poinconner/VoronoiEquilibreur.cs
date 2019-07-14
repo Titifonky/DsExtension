@@ -7,26 +7,65 @@ using static Cmds.Poinconner.BitmapHelper;
 
 namespace Cmds.Poinconner
 {
-    public class ParametrePoincon
-    {
-        public int NbPoints = 3000;
-        public float JeuMiniEntrePoincons = 3;
-        public float? JeuVariable = 0;
-        public float? DiametrePoinconMax = null;
-        public int NbEquilibrage = 3;
-
-    }
-
     public static class VoronoiEquilibreur
     {
-        public struct SitePoincon
+        public struct Cellule
         {
             public Site Site;
-            public double Poincon;
-            public SitePoincon(Site s, double diam)
+            public double CercleInscrit;
+            public float GrisCercleInscrit;
+            public float GrisCellule;
+            public Cellule(Site s, double diam)
             {
                 Site = s;
-                Poincon = diam;
+                CercleInscrit = diam;
+                GrisCercleInscrit = 0;
+                GrisCellule = 0;
+                InitFacteurGris();
+                InitGrisCellule();
+            }
+
+            private void InitFacteurGris()
+            {
+                var nb = 0f;
+                var gris = 0;
+                var r2 = (CercleInscrit * CercleInscrit) * 0.25;
+                for (int i = 0; i <= CercleInscrit; i++)
+                    for (int j = 0; j <= CercleInscrit; j++)
+                    {
+                        var x = Site.X + i; var y = Site.Y + j;
+                        var dx = i - (CercleInscrit * 0.5); var dy = j - (CercleInscrit * 0.5);
+                        if (x > 0 && x < Settings.Dimensions.Width && y > 0 && y < Settings.Dimensions.Height && ((dx * dx) + (dy * dy)) <= r2)
+                        {
+                            nb++;
+                            gris += BitmapHelper.ValeurCanal((int)x, (int)y, BitmapHelper.Canal.Luminosite);
+                        }
+                    }
+
+                if(nb > 0)
+                    GrisCercleInscrit = gris / nb;
+            }
+
+            private void InitGrisCellule()
+            {
+                var nb = 0f;
+                var gris = 0;
+
+                var enveloppe = Site.Polygon.Enveloppe;
+
+                for (int x = 0; x < enveloppe.Width; x++)
+                    for (int y = 0; y < enveloppe.Height; y++)
+                    {
+                        var pt = new PointF(enveloppe.X + x, enveloppe.Y + y);
+                        if (Site.Polygon.InPolygon(pt))
+                        {
+                            nb++;
+                            gris += BitmapHelper.ValeurCanal((int)x, (int)y, BitmapHelper.Canal.Luminosite);
+                        }
+                    }
+
+                if (nb > 0)
+                    GrisCellule = gris / nb;
             }
         }
 
@@ -34,14 +73,13 @@ namespace Cmds.Poinconner
         {
             public static Bitmap Bmp;
             public static Size Dimensions;
-            public static float JeuPoincon = 3;
             public static VoronoiGraph Graph;
             //public static Dictionary<Canal, int[]> Histogram;
         }
 
-        public static List<SitePoincon> Start(DraftSight.Interop.dsAutomation.ReferenceImage img, List<PointF> liste, int jeu, out VoronoiGraph graph)
+        public static List<Cellule> Start(DraftSight.Interop.dsAutomation.ReferenceImage img, List<PointF> liste, int nbEquilibrage, out VoronoiGraph graph)
         {
-            List<SitePoincon> listepoincon = null;
+            List<Cellule> listepoincon = null;
 
             try
             {
@@ -53,7 +91,6 @@ namespace Cmds.Poinconner
                 Settings.Bmp = bmp.Redimensionner(new Size(LgPx, HtPx));
                 bmp.Dispose();
                 Settings.Dimensions = new Size(LgMM, HtMM); ;
-                Settings.JeuPoincon = jeu;
                 //Settings.Histogram = BitmapHelper.Histogramme(Settings.Bmp);
 
                 BitmapHelper.Verrouiller(Settings.Bmp);
@@ -61,13 +98,13 @@ namespace Cmds.Poinconner
 
                 Settings.Graph = VoronoiGraph.ComputeVoronoiGraph(liste, LgMM, HtMM, false);
 
-                for (int k = 0; k < 4; k++)
+                for (int k = 0; k < nbEquilibrage; k++)
                 {
                     liste = Equilibrer();
                     Settings.Graph = VoronoiGraph.ComputeVoronoiGraph(liste, LgMM, HtMM, false);
                 }
 
-                listepoincon = CalculerPoincon();
+                listepoincon = CalculerCellule();
 
                 BitmapHelper.Liberer();
 
@@ -84,8 +121,6 @@ namespace Cmds.Poinconner
             var liste = new List<PointF>();
             foreach (var site in Settings.Graph.Sites)
             {
-                var l = site.Region;
-
                 var enveloppe = site.Polygon.Enveloppe;
                 double xSum = 0, ySum = 0, pSum = 0;
 
@@ -95,10 +130,11 @@ namespace Cmds.Poinconner
                         var pt = new PointF(enveloppe.X + x, enveloppe.Y + y);
                         if (site.Polygon.InPolygon(pt))
                         {
-                            var g = BitmapHelper.ValeurCanal((int)pt.X, (int)pt.Y, Canal.Luminosite);
-                            xSum += g * x;
-                            ySum += g * y;
-                            pSum += g;
+                            var gris = BitmapHelper.ValeurCanal((int)pt.X, (int)pt.Y, Canal.Luminosite);
+
+                            xSum += gris * x;
+                            ySum += gris * y;
+                            pSum += gris;
                         }
                     }
 
@@ -114,16 +150,16 @@ namespace Cmds.Poinconner
             return liste;
         }
 
-        private static List<SitePoincon> CalculerPoincon()
+        private static List<Cellule> CalculerCellule()
         {
-            var liste = new List<SitePoincon>();
+            var liste = new List<Cellule>();
 
             foreach (var site in Settings.Graph.Sites)
             {
                 var lgMin = site.MinDistToNearestEdge;
 
                 if (!float.IsNaN(lgMin))
-                    liste.Add(new SitePoincon(site, (lgMin - (Settings.JeuPoincon * 0.5)) * 2));
+                    liste.Add(new Cellule(site, lgMin * 2));
             }
 
             return liste;

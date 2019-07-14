@@ -92,7 +92,6 @@
     <Compile Include="Cmds\Poinconner\CmdPoinconner.cs" />
     <Compile Include="Cmds\Poinconner\Outils.cs" />
     <Compile Include="Cmds\Poinconner\BitmapRejectionSampler.cs" />
-    <Compile Include="Cmds\Poinconner\UniformPoissonDiskSampler.cs" />
     <Compile Include="Cmds\Poinconner\VoronoiEquilibreur.cs" />
     <Compile Include="dsAddin.cs" />
     <Compile Include="Log.cs" />

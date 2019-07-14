@@ -2,6 +2,8 @@ using DraftSight.Interop.dsAutomation;
 using LogDebugging;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Runtime.InteropServices;
 
 namespace Cmds.Poinconner
 {
@@ -53,6 +55,21 @@ namespace Cmds.Poinconner
                 SlFilter.AddEntityType(dsObjectType_e.dsReferenceImageType);
                 SlFilter.Active = true;
 
+                int NbPoint = 5000;
+                Double Jeu = 5;
+                Double DiamMin = 0;
+                Double DiamMax = Double.PositiveInfinity;
+                Double SeuilNoirs = 8;
+                int TypeSampler = 1;
+                int NbAffinage = 4;
+
+                CmdLine.PromptForInteger("Nb de points maximum ", NbPoint, out NbPoint);
+                CmdLine.PromptForDouble("Jeu entre les cercles ", Jeu, out Jeu);
+                CmdLine.PromptForDouble("Supprimer les cercles de diam inf. à ", DiamMin, out DiamMin);
+                CmdLine.PromptForDouble("Réduire les cercles de diam sup. à ", DiamMax, out DiamMax);
+                CmdLine.PromptForInteger("Type de sampler : 1 -> Poisson / 2 -> Rejection ", TypeSampler, out TypeSampler);
+                CmdLine.PromptForInteger("Nb d'iteration pour l'affinage ", NbAffinage, out NbAffinage);
+
                 //if (CmdLine.PromptForSelection(true, "Selectionnez l'image", "Ce n'est pas une image"))
                 //{
                 //    dsObjectType_e entityType;
@@ -79,13 +96,21 @@ namespace Cmds.Poinconner
                 {
                     CmdLine.PrintLine(String.Format("Image : {0}", Image.GetPath()));
 
-                    //var listePoint = BitmapRejectionSampler.Run(Image, 6000);
-                    var listePoint = BitmapPoissonSampler.Run(Image, 6000);
+                    Double ImgX, ImgY, ImgZ;
+                    Image.GetPosition(out ImgX, out ImgY, out ImgZ);
+
+                    CmdLine.PrintLine("Sampler");
+
+                    List<PointF> listePoint;
+                    if (TypeSampler == 1)
+                        listePoint = BitmapPoissonSampler.Run(Image, NbPoint);
+                    else
+                        listePoint = BitmapRejectionSampler.Run(Image, NbPoint);
+
+                    CmdLine.PrintLine("Sampler terminé");
 
                     VoronoiMap.VoronoiGraph graph;
-                    var listeSitePoincon = VoronoiEquilibreur.Start(Image, listePoint, 2, out graph);
-
-                    CmdLine.PrintLine(String.Format("Nb de percages : {0}", listeSitePoincon.Count));
+                    var listeSitePoincon = VoronoiEquilibreur.Start(Image, listePoint, NbAffinage, out graph);
 
                     dsCreateObjectResult_e res;
                     var CalquePoincon = LyM.GetLayer("Poincon");
@@ -106,13 +131,40 @@ namespace Cmds.Poinconner
                         CalqueMaillage.Color = c;
                     }
 
+                    var CalqueHachures = LyM.GetLayer("Hachures");
+                    if (CalqueHachures == null)
+                    {
+                        LyM.CreateLayer("Hachures", out CalqueHachures, out res);
+                        var c = CalqueHachures.Color;
+                        c.SetColorByIndex(100);
+                        CalqueMaillage.Color = c;
+                    }
+
+                    var ListeCercles = new List<Circle>();
                     CalquePoincon.Activate();
                     foreach (var pc in listeSitePoincon)
-                        SkM.InsertCircleByDiameter(pc.Site.X, Image.Height - pc.Site.Y, 0, pc.Poincon);
+                    {
+                        if (pc.GrisCercleInscrit > SeuilNoirs && (pc.CercleInscrit - Jeu * 0.5) >= DiamMin)
+                        {
+                            var cercle = SkM.InsertCircleByDiameter(ImgX + pc.Site.X, ImgY + Image.Height - pc.Site.Y, 0, Math.Min(DiamMax, pc.CercleInscrit - Jeu * 0.5));
+                            ListeCercles.Add(cercle);
+                        }
+                    }
+
+                    CalqueHachures.Activate();
+                    var selectedEntities = new DispatchWrapper[ListeCercles.Count];
+                    for (int i = 0; i < ListeCercles.Count; i++)
+                        selectedEntities[i] = new DispatchWrapper(ListeCercles[i]);
+
+                    SkM.InsertHatchByEntities(selectedEntities, "SOLID", 1, 0);
+
+                    CmdLine.PrintLine(String.Format("Nb de percages : {0}", ListeCercles.Count));
 
                     CalqueMaillage.Activate();
                     foreach (var s in graph.Segments)
-                        SkM.InsertLine(s.P1.X, Image.Height - s.P1.Y, 0, s.P2.X, Image.Height - s.P2.Y, 0);
+                        SkM.InsertLine(ImgX + s.P1.X, ImgY + Image.Height - s.P1.Y, 0, ImgX + s.P2.X, ImgY + Image.Height - s.P2.Y, 0);
+
+                    LyM.GetLayer("0").Activate();
 
                 }
                 else

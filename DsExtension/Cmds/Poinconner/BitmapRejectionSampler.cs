@@ -34,7 +34,9 @@ namespace Cmds.Poinconner
 
                     int gris = BitmapHelper.ValeurCanal(MathHelper.FloorToInt(fx), MathHelper.FloorToInt(fy), Canal.Luminosite);
 
-                    if (gris > 2 && RandomHelper.Random.Next(255) <= gris)
+                    if (gris > 2) continue;
+
+                    if (RandomHelper.Random.Next(255) <= gris)
                     {
                         sites.Add(new PointF(fx + 4, fy + 4));
                         i++;
