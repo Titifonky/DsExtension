@@ -63,7 +63,6 @@ namespace Cmds.Poinconner
                         var dx = i - Settings.MinimumDistance; var dy = j - Settings.MinimumDistance;
                         if (x > 0 && x < Settings.Dimensions.Width && y > 0 && y < Settings.Dimensions.Height && ((dx * dx) + (dy * dy)) <= r2)
                         {
-                            Log.Message("ok");
                             nb++;
                             gris += BitmapHelper.ValeurCanal((int)x, (int)y, BitmapHelper.Canal.Luminosite);
                         }

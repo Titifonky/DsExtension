@@ -59,7 +59,8 @@ namespace Cmds.Poinconner
                 Double Jeu = 5;
                 Double DiamMin = 0;
                 Double DiamMax = Double.PositiveInfinity;
-                Double SeuilNoirs = 8;
+                int SeuilNoirs = 8;
+                int BlancPctDiam = 70;
                 int TypeSampler = 1;
                 int NbAffinage = 4;
 
@@ -67,6 +68,8 @@ namespace Cmds.Poinconner
                 CmdLine.PromptForDouble("Jeu entre les cercles ", Jeu, out Jeu);
                 CmdLine.PromptForDouble("Supprimer les cercles de diam inf. à ", DiamMin, out DiamMin);
                 CmdLine.PromptForDouble("Réduire les cercles de diam sup. à ", DiamMax, out DiamMax);
+                CmdLine.PromptForInteger("Seuil mini pour les noirs (0 à 255) ", SeuilNoirs, out SeuilNoirs);
+                CmdLine.PromptForInteger("Blanc, % du diam mini (0 à 100)", BlancPctDiam, out BlancPctDiam);
                 CmdLine.PromptForInteger("Type de sampler : 1 -> Poisson / 2 -> Rejection ", TypeSampler, out TypeSampler);
                 CmdLine.PromptForInteger("Nb d'iteration pour l'affinage ", NbAffinage, out NbAffinage);
 
@@ -142,11 +145,19 @@ namespace Cmds.Poinconner
 
                     var ListeCercles = new List<Circle>();
                     CalquePoincon.Activate();
+
+                    var f = (100 - BlancPctDiam) / (255 - SeuilNoirs);
+
                     foreach (var pc in listeSitePoincon)
                     {
-                        if (pc.GrisCercleInscrit > SeuilNoirs && (pc.CercleInscrit - Jeu * 0.5) >= DiamMin)
+                        var diam = pc.CercleInscrit - (Jeu * 0.5);
+                        var reduce = (BlancPctDiam + (255 - pc.GrisCercleInscrit) * f) / 100;
+                        var diamReduce = diam * reduce;
+                        
+                        if (pc.GrisCercleInscrit > SeuilNoirs && diamReduce >= DiamMin)
                         {
-                            var cercle = SkM.InsertCircleByDiameter(ImgX + pc.Site.X, ImgY + Image.Height - pc.Site.Y, 0, Math.Min(DiamMax, pc.CercleInscrit - Jeu * 0.5));
+                            Log.Message("Ø : " + diam + " / f : " + reduce + " / Øred : " + diamReduce);
+                            var cercle = SkM.InsertCircleByDiameter(ImgX + pc.Site.X, ImgY + Image.Height - pc.Site.Y, 0, Math.Min(DiamMax, diamReduce));
                             ListeCercles.Add(cercle);
                         }
                     }
@@ -166,6 +177,7 @@ namespace Cmds.Poinconner
 
                     LyM.GetLayer("0").Activate();
 
+                    CalqueMaillage.Shown = false;
                 }
                 else
                     CmdLine.PrintLine("Pas d'image");
