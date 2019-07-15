@@ -8,7 +8,7 @@ namespace Cmds.Poinconner
 {
     public static class BitmapRejectionSampler
     {
-        public static List<PointF> Run(DraftSight.Interop.dsAutomation.ReferenceImage img, int nbPoint)
+        public static List<PointF> Run(DraftSight.Interop.dsAutomation.ReferenceImage img, int nbPoint, int niveauGrisMini = 2)
         {
             var sites = new List<PointF>();
 
@@ -21,7 +21,9 @@ namespace Cmds.Poinconner
                 var bmp = new Bitmap(img.GetPath());
                 var Bmp = bmp.Redimensionner(new Size(LgPx, HtPx));
                 bmp.Dispose();
-                var Dimensions = new Size(LgMM, HtMM); ;
+
+                int decal = 4;
+                float decal2 = decal / 2f;
 
                 BitmapHelper.Verrouiller(Bmp);
 
@@ -29,16 +31,14 @@ namespace Cmds.Poinconner
 
                 while (i < nbPoint)
                 {
-                    float fx = RandomHelper.Random.Next(LgMM - 8);
-                    float fy = RandomHelper.Random.Next(HtMM - 8);
+                    float fx = RandomHelper.Random.Next(LgMM - decal);
+                    float fy = RandomHelper.Random.Next(HtMM - decal);
 
                     int gris = BitmapHelper.ValeurCanal(MathHelper.FloorToInt(fx), MathHelper.FloorToInt(fy), Canal.Luminosite);
 
-                    if (gris > 2) continue;
-
-                    if (RandomHelper.Random.Next(255) <= gris)
+                    if (gris > niveauGrisMini && RandomHelper.Random.Next(255) <= gris)
                     {
-                        sites.Add(new PointF(fx + 4, fy + 4));
+                        sites.Add(new PointF(fx + decal2, fy + decal2));
                         i++;
                     }
                 }
@@ -47,7 +47,7 @@ namespace Cmds.Poinconner
 
                 Bmp.Dispose();
             }
-            catch (Exception ex) { LogDebugging.Log.Message(ex); }
+            catch (Exception ex) { Log.Message(ex); }
 
             return sites;
         }

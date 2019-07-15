@@ -57,12 +57,13 @@ namespace Cmds.Poinconner
 
                 int NbPoint = 5000;
                 Double Jeu = 5;
-                Double DiamMin = 0;
-                Double DiamMax = Double.PositiveInfinity;
+                Double DiamMin = 5;
+                Double DiamMax = 45; // Double.PositiveInfinity;
                 int SeuilNoirs = 8;
-                int BlancPctDiam = 70;
-                int TypeSampler = 1;
-                int NbAffinage = 4;
+                int BlancPctDiam = 65;
+                int TypeSampler = 2;
+                int NbAffinage = 6;
+                bool MaillageEtPoint = false;
 
                 CmdLine.PromptForInteger("Nb de points maximum ", NbPoint, out NbPoint);
                 CmdLine.PromptForDouble("Jeu entre les cercles ", Jeu, out Jeu);
@@ -72,24 +73,25 @@ namespace Cmds.Poinconner
                 CmdLine.PromptForInteger("Blanc, % du diam mini (0 à 100)", BlancPctDiam, out BlancPctDiam);
                 CmdLine.PromptForInteger("Type de sampler : 1 -> Poisson / 2 -> Rejection ", TypeSampler, out TypeSampler);
                 CmdLine.PromptForInteger("Nb d'iteration pour l'affinage ", NbAffinage, out NbAffinage);
+                CmdLine.PromptForBool("Dessiner le maillage et les points d'origine ", "Oui", "Non", MaillageEtPoint, out MaillageEtPoint);
 
-                //if (CmdLine.PromptForSelection(true, "Selectionnez l'image", "Ce n'est pas une image"))
-                //{
-                //    dsObjectType_e entityType;
-                //    var count = SlMgr.GetSelectedObjectCount(dsSelectionSetType_e.dsSelectionSetType_Previous);
+                if (CmdLine.PromptForSelection(true, "Selectionnez l'image", "Ce n'est pas une image"))
+                {
+                    dsObjectType_e entityType;
+                    var count = SlM.GetSelectedObjectCount(dsSelectionSetType_e.dsSelectionSetType_Previous);
 
-                //    object selectedEntity = SlMgr.GetSelectedObject(dsSelectionSetType_e.dsSelectionSetType_Previous, 0, out entityType);
+                    object selectedEntity = SlM.GetSelectedObject(dsSelectionSetType_e.dsSelectionSetType_Previous, 0, out entityType);
 
-                //    if (dsObjectType_e.dsReferenceImageType == entityType)
-                //        Image = (ReferenceImage)selectedEntity;
-                //}
+                    if (dsObjectType_e.dsReferenceImageType == entityType)
+                        Image = (ReferenceImage)selectedEntity;
+                }
 
-                object ObjType = null;
-                object ObjEntites = null;
-                string[] TabNomsCalques = GetTabNomsCalques(DsDoc);
-                SkM.GetEntities(SlFilter, TabNomsCalques, out ObjType, out ObjEntites);
-                object[] TabEntites = ObjEntites as object[];
-                Image = (ReferenceImage)TabEntites[0];
+                //object ObjType = null;
+                //object ObjEntites = null;
+                //string[] TabNomsCalques = GetTabNomsCalques(DsDoc);
+                //SkM.GetEntities(SlFilter, TabNomsCalques, out ObjType, out ObjEntites);
+                //object[] TabEntites = ObjEntites as object[];
+                //Image = (ReferenceImage)TabEntites[0];
 
                 TimeSpan t; DateTime DateTimeStart;
 
@@ -103,6 +105,7 @@ namespace Cmds.Poinconner
                     Image.GetPosition(out ImgX, out ImgY, out ImgZ);
 
                     CmdLine.PrintLine("Sampler");
+                    Log.Message("Sampler");
 
                     List<PointF> listePoint;
                     if (TypeSampler == 1)
@@ -114,12 +117,34 @@ namespace Cmds.Poinconner
                     else
                         listePoint = BitmapRejectionSampler.Run(Image, NbPoint);
 
+                    dsCreateObjectResult_e res;
+                    var CalquePoint = LyM.GetLayer("Point");
+                    if (CalquePoint == null)
+                    {
+                        LyM.CreateLayer("Point", out CalquePoint, out res);
+                        var c = CalquePoint.Color;
+                        c.SetColorByIndex(230);
+                        CalquePoint.Color = c;
+                    }
+
+                    if (MaillageEtPoint)
+                    {
+                        CalquePoint.Activate();
+                        foreach (var pc in listePoint)
+                            SkM.InsertCircleByDiameter(ImgX + pc.X, ImgY + Image.Height - pc.Y, 0, 2);
+                    }
+                    
+
                     CmdLine.PrintLine("Sampler terminé");
+                    Log.Message("Sampler terminé");
+
+                    Log.Message("Equilibrage des points");
 
                     VoronoiMap.VoronoiGraph graph;
                     var listeSitePoincon = VoronoiEquilibreur.Start(Image, listePoint, NbAffinage, out graph);
 
-                    dsCreateObjectResult_e res;
+                    Log.Message("Equilibrage terminé");
+
                     var CalquePoincon = LyM.GetLayer("Poincon");
                     if (CalquePoincon == null)
                     {
@@ -158,19 +183,20 @@ namespace Cmds.Poinconner
                     {
                         var diam = pc.CercleInscrit - (Jeu * 0.5);
                         var reduce = (BlancPctDiam + (255 - pc.GrisCercleInscrit) * facteurGris) / 100;
-                        var diamReduce = diam * reduce;
-                        
+                        var diamReduce = Math.Min(DiamMax, diam * reduce);
+
                         if (pc.GrisCercleInscrit > SeuilNoirs && diamReduce >= DiamMin)
                         {
-                            Log.Message("Ø : " + diam + " / f : " + reduce + " / Øred : " + diamReduce);
+                            //Log.Message("Ø : " + diam + " / f : " + reduce + " / Øred : " + diamReduce);
                             DiamMiniDessin = Math.Min(DiamMiniDessin, diamReduce);
                             DiamMaxiDessin = Math.Max(DiamMaxiDessin, diamReduce);
-                            var cercle = SkM.InsertCircleByDiameter(ImgX + pc.Site.X, ImgY + Image.Height - pc.Site.Y, 0, Math.Min(DiamMax, diamReduce));
+                            var cercle = SkM.InsertCircleByDiameter(ImgX + pc.Site.X, ImgY + Image.Height - pc.Site.Y, 0, diamReduce);
                             ListeCercles.Add(cercle);
                         }
                     }
-
-                    CmdLine.PrintLine(String.Format("Nb de percages : {0} / DiamMaxi : {1} / DiamMini : {2}", ListeCercles.Count, DiamMaxiDessin, DiamMiniDessin));
+                    var format = String.Format("Nb de percages : {0} / DiamMaxi : {1:0.0} / DiamMini : {2:0.0}", ListeCercles.Count, DiamMaxiDessin, DiamMiniDessin);
+                    CmdLine.PrintLine(format);
+                    Log.Message(format);
 
                     CalqueHachures.Activate();
                     var selectedEntities = new DispatchWrapper[ListeCercles.Count];
@@ -179,13 +205,18 @@ namespace Cmds.Poinconner
 
                     SkM.InsertHatchByEntities(selectedEntities, "SOLID", 1, 0);
 
-                    CalqueMaillage.Activate();
-                    foreach (var s in graph.Segments)
-                        SkM.InsertLine(ImgX + s.P1.X, ImgY + Image.Height - s.P1.Y, 0, ImgX + s.P2.X, ImgY + Image.Height - s.P2.Y, 0);
+                    if (MaillageEtPoint)
+                    {
+                        CalqueMaillage.Activate();
+                        foreach (var s in graph.Segments)
+                            SkM.InsertLine(ImgX + s.P1.X, ImgY + Image.Height - s.P1.Y, 0, ImgX + s.P2.X, ImgY + Image.Height - s.P2.Y, 0);
+                    }
 
                     LyM.GetLayer("0").Activate();
 
                     CalqueMaillage.Shown = false;
+                    CalquePoint.Shown = false;
+                    CalquePoincon.Shown = false;
                 }
                 else
                     CmdLine.PrintLine("Pas d'image");
