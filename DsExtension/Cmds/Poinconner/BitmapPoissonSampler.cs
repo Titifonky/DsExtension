@@ -111,7 +111,7 @@ namespace Cmds.Poinconner
             public static List<VecteurV> ActivePoints, Points;
         }
 
-        public static List<PointF> Run(DraftSight.Interop.dsAutomation.ReferenceImage img, int nbPoint, double factDistanceRejection = 2)
+        public static List<PointF> Run(DraftSight.Interop.dsAutomation.ReferenceImage img, int nbPoint, double factDistanceRejection = 2, double factDistMin = 0.7)
         {
             try
             {
@@ -126,7 +126,7 @@ namespace Cmds.Poinconner
 
                 Settings.Dimensions = new SizeF(LgMM, HtMM);
                 Settings.Center = new PointF(LgMM * 0.5f, HtMM * 0.5f);
-                Settings.MinimumDistance = (float)(LgMM / Math.Sqrt(nbPoint / (HtMM / (double)LgMM))) * 0.7f;
+                Settings.MinimumDistance = (float)((LgMM / Math.Sqrt(nbPoint / (HtMM / (double)LgMM))) * factDistMin);
                 Log.Message("MinimumDistance : " + Settings.MinimumDistance);
                 Settings.CellSize = Settings.MinimumDistance / SquareRootTwo;
                 Settings.GridWidth = (int)(LgMM / Settings.CellSize) + 1;

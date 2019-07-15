@@ -110,9 +110,11 @@ namespace Cmds.Poinconner
                     List<PointF> listePoint;
                     if (TypeSampler == 1)
                     {
-                        Double fact = 2;
-                        CmdLine.PromptForDouble("Facteur multip. du rayon de rejection ", fact, out fact);
-                        listePoint = BitmapPoissonSampler.Run(Image, NbPoint, fact);
+                        Double fact1 = 2;
+                        Double fact2 = 0.7;
+                        CmdLine.PromptForDouble("Facteur multip. du rayon de rejection ", fact1, out fact1);
+                        CmdLine.PromptForDouble("Facteur multip. du rayon minimum à l'initialisation ", fact2, out fact2);
+                        listePoint = BitmapPoissonSampler.Run(Image, NbPoint, fact1, fact2);
                     }
                     else
                         listePoint = BitmapRejectionSampler.Run(Image, NbPoint);
@@ -199,11 +201,12 @@ namespace Cmds.Poinconner
                     Log.Message(format);
 
                     CalqueHachures.Activate();
-                    var selectedEntities = new DispatchWrapper[ListeCercles.Count];
-                    for (int i = 0; i < ListeCercles.Count; i++)
-                        selectedEntities[i] = new DispatchWrapper(ListeCercles[i]);
 
-                    SkM.InsertHatchByEntities(selectedEntities, "SOLID", 1, 0);
+                    foreach (var item in ListeCercles)
+                    {
+                        var ent = new DispatchWrapper[1] { new DispatchWrapper(item) };
+                        SkM.InsertHatchByEntities(ent, "SOLID", 1, 0);
+                    }
 
                     if (MaillageEtPoint)
                     {
