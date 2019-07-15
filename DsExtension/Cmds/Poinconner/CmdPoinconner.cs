@@ -106,7 +106,11 @@ namespace Cmds.Poinconner
 
                     List<PointF> listePoint;
                     if (TypeSampler == 1)
-                        listePoint = BitmapPoissonSampler.Run(Image, NbPoint);
+                    {
+                        Double fact = 2;
+                        CmdLine.PromptForDouble("Facteur multip. du rayon de rejection ", fact, out fact);
+                        listePoint = BitmapPoissonSampler.Run(Image, NbPoint, fact);
+                    }
                     else
                         listePoint = BitmapRejectionSampler.Run(Image, NbPoint);
 

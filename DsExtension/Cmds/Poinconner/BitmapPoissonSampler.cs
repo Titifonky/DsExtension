@@ -100,6 +100,7 @@ namespace Cmds.Poinconner
             public static PointF Center;
             public static SizeF Dimensions;
             public static float MinimumDistance;
+            public static float FactDistanceRejection;
             public static float CellSize;
             public static int GridWidth, GridHeight;
         }
@@ -110,7 +111,7 @@ namespace Cmds.Poinconner
             public static List<VecteurV> ActivePoints, Points;
         }
 
-        public static List<PointF> Run(DraftSight.Interop.dsAutomation.ReferenceImage img, int nbPoint)
+        public static List<PointF> Run(DraftSight.Interop.dsAutomation.ReferenceImage img, int nbPoint, double factDistanceRejection = 2)
         {
             try
             {
@@ -130,6 +131,7 @@ namespace Cmds.Poinconner
                 Settings.CellSize = Settings.MinimumDistance / SquareRootTwo;
                 Settings.GridWidth = (int)(LgMM / Settings.CellSize) + 1;
                 Settings.GridHeight = (int)(HtMM / Settings.CellSize) + 1;
+                Settings.FactDistanceRejection = (float)factDistanceRejection;
 
                 State.Grid = new VecteurV?[Settings.GridWidth, Settings.GridHeight];
                 State.ActivePoints = new List<VecteurV>();
@@ -218,7 +220,7 @@ namespace Cmds.Poinconner
         {
             var d = RandomHelper.Random.NextDouble();
             
-            var radius = center.MinimumDistance + (Settings.MinimumDistance * 2 * d);
+            var radius = center.MinimumDistance + (center.MinimumDistance * Settings.FactDistanceRejection * d);
 
             d = RandomHelper.Random.NextDouble();
             var angle = MathHelper.TwoPi * d;
