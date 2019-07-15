@@ -146,21 +146,27 @@ namespace Cmds.Poinconner
                     var ListeCercles = new List<Circle>();
                     CalquePoincon.Activate();
 
-                    var f = (100 - BlancPctDiam) / (255 - SeuilNoirs);
+                    var facteurGris = (100 - BlancPctDiam) / (255 - SeuilNoirs);
+                    var DiamMiniDessin = Double.PositiveInfinity;
+                    var DiamMaxiDessin = 0.0;
 
                     foreach (var pc in listeSitePoincon)
                     {
                         var diam = pc.CercleInscrit - (Jeu * 0.5);
-                        var reduce = (BlancPctDiam + (255 - pc.GrisCercleInscrit) * f) / 100;
+                        var reduce = (BlancPctDiam + (255 - pc.GrisCercleInscrit) * facteurGris) / 100;
                         var diamReduce = diam * reduce;
                         
                         if (pc.GrisCercleInscrit > SeuilNoirs && diamReduce >= DiamMin)
                         {
                             Log.Message("Ø : " + diam + " / f : " + reduce + " / Øred : " + diamReduce);
+                            DiamMiniDessin = Math.Min(DiamMiniDessin, diamReduce);
+                            DiamMaxiDessin = Math.Max(DiamMaxiDessin, diamReduce);
                             var cercle = SkM.InsertCircleByDiameter(ImgX + pc.Site.X, ImgY + Image.Height - pc.Site.Y, 0, Math.Min(DiamMax, diamReduce));
                             ListeCercles.Add(cercle);
                         }
                     }
+
+                    CmdLine.PrintLine(String.Format("Nb de percages : {0} / DiamMaxi : {1} / DiamMini : {2}", ListeCercles.Count, DiamMaxiDessin, DiamMiniDessin));
 
                     CalqueHachures.Activate();
                     var selectedEntities = new DispatchWrapper[ListeCercles.Count];
@@ -168,8 +174,6 @@ namespace Cmds.Poinconner
                         selectedEntities[i] = new DispatchWrapper(ListeCercles[i]);
 
                     SkM.InsertHatchByEntities(selectedEntities, "SOLID", 1, 0);
-
-                    CmdLine.PrintLine(String.Format("Nb de percages : {0}", ListeCercles.Count));
 
                     CalqueMaillage.Activate();
                     foreach (var s in graph.Segments)
